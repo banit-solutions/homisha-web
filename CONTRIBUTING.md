@@ -4,7 +4,7 @@ We welcome and appreciate your contributions to Homisha! If you want to help mak
 
 ## Code of Conduct
 
-Our project adheres to a Code of Conduct that all contributors are expected to follow. Please read [Code of Conduct](link-to-CODE-OF-CONDUCT.md) before contributing to ensure a harmonious and respectful environment for all.
+Our project adheres to a Code of Conduct that all contributors are expected to follow. Please read [Code of Conduct](CODE-OF-CONDUCT.md) before contributing to ensure a harmonious and respectful environment for all.
 
 ## Getting Started
 
