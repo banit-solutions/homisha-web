@@ -50,4 +50,4 @@ We welcome contributions to Homisha! Please read our [CONTRIBUTING.md](CONTRIBUT
 
 ## License
 
-This project is licensed under the [MIT LICENCE] - see the [LICENSE.md](link-to-LICENSE.md) file for details.
+This project is licensed under the MIT LICENCE - see the [LICENSE.txt](LICENSE.txt) file for details.
