@@ -10,26 +10,26 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('buildings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('estate_id')->constrained()->onDelete('cascade');
             $table->string('name');
-            $table->string('email')->unique();
-            $table->string('phone');
-            $table->string('residential_county');
-            $table->text('profile_image')->nullable();
+            $table->text('profile_image');
+            $table->text('occupation_certificate');
             $table->decimal('longitude', 10, 7);
             $table->decimal('latitude', 10, 7);
-            $table->rememberToken();
-            $table->boolean('actively_searching')->default(false);
+            $table->text('description')->nullable();
+            $table->integer('status')->default(0);
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('buildings');
     }
 };
