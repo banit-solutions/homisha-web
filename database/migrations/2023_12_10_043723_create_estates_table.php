@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('estates', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('manager_id')->constrained()->onDelete('set null');
+            $table->foreignId('manager_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->text('description')->nullable();
             $table->timestamps();

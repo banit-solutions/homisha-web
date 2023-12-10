@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('facilities', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('property_id')->constrained('houses')->onDelete('cascade');
+            $table->integer('property_id');
             $table->string('name');
             $table->string('type');
             $table->timestamps();
