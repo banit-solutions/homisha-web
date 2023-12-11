@@ -8,4 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Building extends Model
 {
     use HasFactory;
+    public function estate()
+    {
+        return $this->belongsTo(Estate::class);
+    }
+
+    public function houses()
+    {
+        return $this->hasMany(House::class);
+    }
 }

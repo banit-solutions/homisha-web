@@ -8,4 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Estate extends Model
 {
     use HasFactory;
+
+    public function manager()
+    {
+        return $this->belongsTo(Manager::class)->select(['id', 'name', 'email', 'phone', 'county']);
+    }
+
+    public function buildings()
+    {
+        return $this->hasMany(Building::class);
+    }
 }
