@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,5 +17,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('api.auth')->group(
     function () {
+        Route::group(
+            ['prefix' => 'auth'],
+            function () {
+                Route::post('/otp', [UserController::class, 'sendOTP']);
+                Route::post('/login', [UserController::class, 'login']);
+                Route::post('/register', [UserController::class, 'register']);
+            }
+        );
     }
 );

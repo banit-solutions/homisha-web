@@ -66,7 +66,9 @@
         <section class="otp-section">
             <h2>One-Time Password (OTP)</h2>
             <br>
-            <p>Your OTP is: <span class="otp">123456</span></p>
+            <p>Your OTP is:
+            <h3><span class="otp">{{ $otp }}</span></h3>
+            </p>
             <br>
             <p class="info">Please use this code to proceed with your transaction. Do not share this OTP with anyone.
                 If you didn't request for OTP from <a href="https://banit.co.ke/">Homisha</a> ignore this message</p>
