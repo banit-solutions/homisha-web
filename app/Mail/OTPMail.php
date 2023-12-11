@@ -18,7 +18,7 @@ class OTPMail extends Mailable
      */
     public array $otp;
 
-    public function __construct(array $otp)
+    public function __construct($otp)
     {
         $this->otp = $otp;
     }
