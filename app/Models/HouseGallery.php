@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class HouseGallery extends Model
 {
     use HasFactory;
+    public function house()
+    {
+        return $this->belongsTo(House::class);
+    }
+
 }

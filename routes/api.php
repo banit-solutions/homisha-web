@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HouseController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,15 @@ Route::middleware('api.auth')->group(
             function () {
                 Route::post('/otp', [UserController::class, 'sendOTP']);
                 Route::post('/login', [UserController::class, 'login']);
+                Route::post('/register', [UserController::class, 'register']);
+            }
+        );
+
+        Route::group(
+            ['prefix' => 'house'],
+            function () {
+                Route::get('/all', [HouseController::class, 'getRandomHouses']);
+                Route::get('/my', [HouseController::class, 'getHouses']);
                 Route::post('/register', [UserController::class, 'register']);
             }
         );
