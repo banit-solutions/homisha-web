@@ -33,7 +33,10 @@ Route::middleware('api.auth')->group(
             function () {
                 Route::get('/all', [HouseController::class, 'getRandomHouses']);
                 Route::get('/my', [HouseController::class, 'getHouses']);
-                Route::post('/register', [UserController::class, 'register']);
+                Route::post('/save/view', [HouseController::class, 'updateHouseViews']);
+                Route::post('/add/favorite', [HouseController::class, 'addFavoriteHouse']);
+                Route::delete('/delete/favorite/{id}', [HouseController::class, 'deleteFavorite']);
+                Route::post('/save/review', [HouseController::class, 'recordReview']);
             }
         );
 
