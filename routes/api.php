@@ -29,14 +29,26 @@ Route::middleware('api.auth')->group(
         );
 
         Route::group(
+            ['prefix' => 'user/update'],
+            function () {
+                Route::put('/profile', [UserController::class, 'updateUser']);
+                Route::put('/location', [UserController::class, 'updateUserLocation']);
+                Route::post('/profile-image', [UserController::class, 'updateUserProfileImage']);
+                Route::put('/preference', [UserController::class, 'updateUserPreferences']);
+            }
+        );
+
+        Route::group(
             ['prefix' => 'house'],
             function () {
                 Route::get('/all', [HouseController::class, 'getRandomHouses']);
                 Route::get('/my', [HouseController::class, 'getHouses']);
+
                 Route::post('/save/view', [HouseController::class, 'updateHouseViews']);
                 Route::post('/add/favorite', [HouseController::class, 'addFavoriteHouse']);
-                Route::delete('/delete/favorite/{id}', [HouseController::class, 'deleteFavorite']);
                 Route::post('/save/review', [HouseController::class, 'recordReview']);
+
+                Route::delete('/delete/favorite/{id}', [HouseController::class, 'deleteFavorite']);
             }
         );
 
@@ -45,7 +57,9 @@ Route::middleware('api.auth')->group(
             function () {
                 Route::get('/all', [ManagerController::class, 'getPaginatedManagers']);
                 Route::get('/rank', [ManagerController::class, 'getRankedManagers']);
-                Route::post('/register', [UserController::class, 'register']);
+
+                Route::post('/send/enquiry', [ManagerController::class, 'storeEnquiry']);
+                Route::post('/send/complaint', [ManagerController::class, 'storeComplaint']);
             }
         );
     }

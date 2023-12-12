@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Complaint;
+use App\Models\Enquiry;
 use App\Models\Manager;
 use Illuminate\Http\Request;
 
@@ -142,6 +144,46 @@ class ManagerController extends Controller
                 ]
             ]
         ];
+    }
+
+    public function storeEnquiry(Request $request)
+    {
+        // Validate the request data
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'manager_id' => 'required|exists:managers,id',
+            'house_id' => 'required|exists:houses,id',
+            'title' => 'required|string|max:255',
+            'message' => 'required|string'
+        ]);
+
+        // Create the enquiry
+        $enquiry = new Enquiry($validated);
+        $enquiry->save();
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Enquiry submitted successfully.',
+        ]);
+    }
+
+    public function storeComplaint(Request $request)
+    {
+        // Validate the request data
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'manager_id' => 'required|exists:managers,id',
+            'message' => 'required|string',
+        ]);
+
+        // Create the complaint
+        $complaint = new Complaint($validated);
+        $complaint->save();
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Complaint submitted successfully.',
+        ]);
     }
 
 }

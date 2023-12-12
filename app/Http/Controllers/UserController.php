@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -118,5 +119,93 @@ class UserController extends Controller
             return response()->json(['error' => true, 'message' => 'Registration failed. Please check your details and try again. ' . $e->getMessage()], 500);
         }
     }
+
+    public function updateUser(Request $request)
+    {
+        $user = $this->getUserByRequest($request);
+
+        $validatedData = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'phone' => 'sometimes|string',
+            'residential_county' => 'sometimes|string',
+            'actively_searching' => 'sometimes|boolean'
+        ]);
+
+        $user->update($validatedData);
+
+        return response()->json([
+            'error' => false,
+            'message' => 'User updated successfully.',
+        ]);
+    }
+
+    public function updateUserProfileImage(Request $request)
+    {
+        $user = $this->getUserByRequest($request);
+
+        $request->validate([
+            'profile_image' => 'required|image|max:2048', // 2MB Max
+        ]);
+
+        $path = $request->file('profile_image')->store('profile_images', 'public');
+        $url = Storage::url($path);
+
+        $user->profile_image = $url;
+        $user->save();
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Profile image updated successfully.',
+        ]);
+    }
+
+    public function updateUserLocation(Request $request)
+    {
+        $user = $this->getUserByRequest($request);
+
+        $validatedData = $request->validate([
+            'longitude' => 'required|numeric',
+            'latitude' => 'required|numeric'
+        ]);
+
+        $user->update($validatedData);
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Location updated successfully.',
+        ]);
+    }
+
+    public function updateUserPreferences(Request $request)
+    {
+        $user = $this->getUserByRequest($request);
+
+        $validatedData = $request->validate([
+            'id' => 'required|exists:user_preferences,id',
+            'user_id' => 'required|exists:users,id',
+            'county' => 'required|string',
+            'min_rent' => 'required|numeric',
+            'max_rent' => 'required|numeric',
+            'house_category' => 'required|string'
+        ]);
+
+        $preferences = UserPreference::findOrFail($validatedData['id']);
+
+        if ($preferences->user_id != $user->id) {
+            return response()->json([
+                'error' => true,
+                'message' => 'You do not have permission to update these preferences.',
+            ], 403); // Forbidden
+        }
+
+        $preferences->update($validatedData);
+
+        return response()->json([
+            'error' => false,
+            'message' => 'User preferences updated successfully.',
+        ]);
+    }
+
 
 }
