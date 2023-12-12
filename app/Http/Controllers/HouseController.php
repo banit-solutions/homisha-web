@@ -82,5 +82,4 @@ class HouseController extends Controller
             200
         );
     }
-    //
 }

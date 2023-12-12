@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HouseController;
+use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,15 @@ Route::middleware('api.auth')->group(
             function () {
                 Route::get('/all', [HouseController::class, 'getRandomHouses']);
                 Route::get('/my', [HouseController::class, 'getHouses']);
+                Route::post('/register', [UserController::class, 'register']);
+            }
+        );
+
+        Route::group(
+            ['prefix' => 'manager'],
+            function () {
+                Route::get('/all', [ManagerController::class, 'getPaginatedManagers']);
+                Route::get('/rank', [ManagerController::class, 'getRankedManagers']);
                 Route::post('/register', [UserController::class, 'register']);
             }
         );
