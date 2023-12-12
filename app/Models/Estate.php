@@ -11,7 +11,7 @@ class Estate extends Model
 
     public function manager()
     {
-        return $this->belongsTo(Manager::class)->select(['id', 'name', 'email', 'phone', 'county']);
+        return $this->belongsTo(Manager::class)->select(['id', 'name', 'email', 'phone', 'county', 'profile_image']);
     }
 
     public function buildings()
