@@ -29,6 +29,16 @@ Route::middleware('api.auth')->group(
         );
 
         Route::group(
+            ['prefix' => 'user/update'],
+            function () {
+                Route::put('/profile', [UserController::class, 'updateUser']);
+                Route::put('/location', [UserController::class, 'updateUserLocation']);
+                Route::post('/profile-image', [UserController::class, 'updateUserProfileImage']);
+                Route::put('/preference', [UserController::class, 'updateUserPreferences']);
+            }
+        );
+
+        Route::group(
             ['prefix' => 'house'],
             function () {
                 Route::get('/all', [HouseController::class, 'getRandomHouses']);
