@@ -28,7 +28,7 @@ class Controller extends BaseController
         return User::where('remember_token', $request->header('Authorization'))->first();
     }
 
-    private function formatHouseData($house, $building, $estate)
+    public function formatHouseData($house, $building, $estate)
     {
         return [
             'id' => $house->id,

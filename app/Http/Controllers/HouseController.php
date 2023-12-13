@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Building;
 use App\Models\Favorite;
 use App\Models\Review;
 use App\Models\User;
 use App\Models\House;
 use App\Models\HouseView;
+use Exception;
 use Illuminate\Http\Request;
 
 class HouseController extends Controller
@@ -84,64 +86,111 @@ class HouseController extends Controller
 
     public function searchByLocation(Request $request)
     {
-        // Validate the request data
-        $validatedData = $request->validate([
-            'longitude' => 'required|numeric',
-            'latitude' => 'required|numeric',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'longitude' => 'required|numeric',
+                'latitude' => 'required|numeric',
+            ]);
 
-        // Assuming you have a scopeNearby in your Building model
-        $houses = House::whereHas('building', function ($query) use ($validatedData) {
-            $query->nearby($validatedData['latitude'], $validatedData['longitude'], 5);
-        })->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])->get();
+            $earthRadius = 6371; // Radius of the earth in kilometers.
+            $radius = 5; // Radius of the search in kilometers.
 
-        $formattedHouses = $houses->map(function ($house) {
-            // Ensure related building and estate are loaded
-            $building = $house->building;
-            $estate = $building ? $building->estate : null;
-            return $this->formatHouseData($house, $building, $estate);
-        });
+            // Fetch all buildings first (consider limiting this query to a reasonable bounding box if possible)
+            $buildings = Building::all();
 
-        return response()->json([
-            'error' => false,
-            'message' => 'Houses found near the specified location.',
-            'data' => $formattedHouses
-        ]);
+            $distances = array();
+
+            // Filter the buildings using PHP to calculate the distance
+            $nearbyBuildings = $buildings->filter(function ($building) use ($validatedData, $earthRadius, $radius) {
+                $latFrom = deg2rad($validatedData['latitude']);
+                $lonFrom = deg2rad($validatedData['longitude']);
+                $latTo = deg2rad($building->latitude);
+                $lonTo = deg2rad($building->longitude);
+
+                $latDelta = $latTo - $latFrom;
+                $lonDelta = $lonTo - $lonFrom;
+
+                $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+                    cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+                $distance = $angle * $earthRadius;
+
+                //echo $building->latitude . ' : ' . $building->longitude . ' => ' . $distance . ', ';
+                return $distance < $radius;
+            });
+
+            // Get the house ids related to the nearby buildings
+            $houseIds = $nearbyBuildings->pluck('id');
+
+            // Now get the houses related to these buildings
+            $houses = House::whereIn('building_id', $houseIds)
+                ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
+                ->get();
+
+            $formattedHouses = $houses->map(function ($house) {
+                // Assuming formatHouseData is defined to format the house data correctly
+                return $this->formatHouseData($house, $house->building, $house->building->estate);
+            });
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Houses found near the specified location.',
+                'data' => $formattedHouses
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
+
 
     public function searchByKeyword(Request $request)
     {
-        // Validate the request data
-        $keyword = $request->validate([
-            'keyword' => 'required|string',
-        ])['keyword'];
+        try {
+            // Validate the request data
+            $keyword = $request->validate(
+                [
+                    'keyword' => 'required|string',
+                ]
+            )['keyword'];
 
-        // Search in houses, estates, and buildings
-        $houses = House::where('description', 'LIKE', "%{$keyword}%")
-            ->orWhereHas('building', function ($query) use ($keyword) {
-                $query->where('name', 'LIKE', "%{$keyword}%")
-                    ->orWhere('description', 'LIKE', "%{$keyword}%");
-            })
-            ->orWhereHas('building.estate', function ($query) use ($keyword) {
-                $query->where('name', 'LIKE', "%{$keyword}%")
-                    ->orWhere('description', 'LIKE', "%{$keyword}%");
-            })
-            ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
-            ->get();
+            // Search in houses, estates, and buildings
+            $houses = House::where('description', 'LIKE', "%{$keyword}%")
+                ->orWhereHas('building', function ($query) use ($keyword) {
+                    $query->where('name', 'LIKE', "%{$keyword}%")
+                        ->orWhere('description', 'LIKE', "%{$keyword}%");
+                })
+                ->orWhereHas('building.estate', function ($query) use ($keyword) {
+                    $query->where('name', 'LIKE', "%{$keyword}%")
+                        ->orWhere('description', 'LIKE', "%{$keyword}%");
+                })
+                ->orWhereHas('facilities', function ($query) use ($keyword) {
+                    $query->where('name', 'LIKE', "%{$keyword}%");
+                })
+                ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
+                ->get();
 
-        $formattedHouses = $houses->map(function ($house) {
-            // Extract building and estate from the house
-            $building = $house->building;
-            $estate = $building ? $building->estate : null;
+            $formattedHouses = $houses->map(function ($house) {
+                // Extract building and estate from the house
+                $building = $house->building;
+                $estate = $building ? $building->estate : null;
 
-            return $this->formatHouseData($house, $building, $estate);
-        });
+                return $this->formatHouseData($house, $building, $estate);
+            });
 
-        return response()->json([
-            'error' => false,
-            'message' => 'Houses found matching the keyword.',
-            'data' => $formattedHouses
-        ]);
+            return response()->json([
+                'error' => false,
+                'message' => 'Houses found matching the keyword.',
+                'data' => $formattedHouses
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage()
+            ]);
+        }
+
     }
 
 
