@@ -11,12 +11,14 @@ class ManagerController extends Controller
 {
     public function getRankedManagers(Request $request)
     {
+        $user = $this->getUserByRequest($request);
+
         $managers = Manager::with(['estates.buildings.houses' => function ($query) {
             $query->with(['facilities', 'houseViews', 'gallery', 'reviews.user']);
         }])
             ->get()
-            ->map(function ($manager) {
-                return $this->formatManagerData($manager);
+            ->map(function ($manager) use ($user) {
+                return $this->formatManagerData($manager, $user);
             })
             ->sortByDesc(function ($manager) {
                 return $manager['average_ratings'];
@@ -36,12 +38,14 @@ class ManagerController extends Controller
         $page = $request->get('page', 1);
         $perPage = $request->get('perPage', 10);
 
+        $user = $this->getUserByRequest($request);
+
         $paginatedManagers = Manager::with(['estates.buildings.houses' => function ($query) {
             $query->with(['facilities', 'houseViews', 'gallery', 'reviews.user']);
         }])->paginate($perPage, ['*'], 'page', $page);
 
-        $managers = collect($paginatedManagers->items())->map(function ($manager) {
-            return $this->formatManagerData($manager);
+        $managers = collect($paginatedManagers->items())->map(function ($manager) use ($user) {
+            return $this->formatManagerData($manager, $user);
         });
 
         return response()->json([
@@ -59,7 +63,7 @@ class ManagerController extends Controller
         ], 200);
     }
 
-    private function formatManagerData($manager)
+    private function formatManagerData($manager, $user)
     {
         $housesData = collect();
         $totalRatings = 0;
@@ -69,7 +73,7 @@ class ManagerController extends Controller
         foreach ($manager->estates as $estate) {
             foreach ($estate->buildings as $building) {
                 foreach ($building->houses as $house) {
-                    $housesData->push($this->formatHouseData($house, $building, $estate));
+                    $housesData->push($this->formatHouseData($house, $building, $estate, $user));
 
                     $houseRatings = $house->reviews->avg('rating'); // Assuming 'rating' column exists in reviews
                     $totalRatings += $houseRatings;

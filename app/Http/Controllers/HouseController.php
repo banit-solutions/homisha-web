@@ -17,13 +17,15 @@ class HouseController extends Controller
     {
         // Get user from remember_token
         $user = $this->getUserByRequest($request);
+
         // Fetch user preferences
         $preferences = $user->userPreferences;
 
         // Query houses based on user preferences (example: filtering by county and rent range)
         $houses = House::whereHas('building.estate')
             ->where(function ($query) use ($preferences) {
-                $query->where('vacancies', '>', 0)->whereBetween('rent', [$preferences->min_rent, $preferences->max_rent])
+                $query->where('vacancies', '>', 0)
+                    ->whereBetween('rent', [$preferences->min_rent, $preferences->max_rent])
                     ->orWhere('category', $preferences->house_category);
             })
             ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
@@ -32,23 +34,24 @@ class HouseController extends Controller
             ->get();
 
         // Transform the house data
-        $houses = $houses->map(function ($house) {
-            $house->reviews = $house->reviews->map(function ($review) {
-                return [
-                    'id' => $review->user->id,
-                    'name' => $review->user->name,
-                    'profile_picture' => $review->user->profile_image
-                ];
-            });
-            return $house;
+        $houses = $houses->map(function ($house) use ($user) {
+            $building = $house->building ?? null;
+            $estate = $building ? $building->estate ?? null : null;
+            return $this->formatHouseData($house, $building, $estate, $user);
         });
-        return response()->json(['error' => false, 'message' => 'data found', 'houses' => $houses], 200);
+
+        return response()->json(['error' => false, 'message' => 'Data found', 'houses' => $houses], 200);
     }
+
+
 
     public function getRandomHouses(Request $request)
     {
         $page = $request->get('page', 1);
         $perPage = $request->get('perPage', 10);
+
+        // Get user from remember_token (or use auth middleware to ensure user is authenticated)
+        $user = $this->getUserByRequest($request);
 
         // Query houses randomly and paginate the results
         $houses = House::where('vacancies', '>', 0)
@@ -56,17 +59,15 @@ class HouseController extends Controller
             ->inRandomOrder()
             ->paginate($perPage, ['*'], 'page', $page);
 
-        // Transform the house data (optional)
-        $housesCollection = $houses->getCollection()->transform(function ($house) {
-            $house->reviews = $house->reviews->map(function ($review) {
-                return [
-                    'id' => $review->user->id,
-                    'name' => $review->user->name,
-                    'profile_picture' => $review->user->profile_image
-                ];
-            });
-            return $house;
-        })->toArray();
+        // Transform the house data
+        $housesCollection = $houses->getCollection()->map(function ($house) use ($user) {
+            $building = $house->building ?? null;
+            $estate = $building ? $building->estate ?? null : null;
+            return $this->formatHouseData($house, $building, $estate, $user);
+        });
+
+        // Replace the original collection with the transformed collection
+        $houses->setCollection($housesCollection);
 
         return response()->json(
             [
@@ -84,6 +85,7 @@ class HouseController extends Controller
         );
     }
 
+
     public function searchByLocation(Request $request)
     {
         try {
@@ -95,10 +97,11 @@ class HouseController extends Controller
             $earthRadius = 6371; // Radius of the earth in kilometers.
             $radius = 5; // Radius of the search in kilometers.
 
-            // Fetch all buildings first (consider limiting this query to a reasonable bounding box if possible)
-            $buildings = Building::all();
+            // Get user from remember_token
+            $user = $this->getUserByRequest($request);
 
-            $distances = array();
+            // Fetch all buildings first (consider limiting this query to a reasonable bounding box if possible)
+            $buildings = Building::where('status', 1);
 
             // Filter the buildings using PHP to calculate the distance
             $nearbyBuildings = $buildings->filter(function ($building) use ($validatedData, $earthRadius, $radius) {
@@ -126,9 +129,9 @@ class HouseController extends Controller
                 ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
                 ->get();
 
-            $formattedHouses = $houses->map(function ($house) {
+            $formattedHouses = $houses->map(function ($house) use($user) {
                 // Assuming formatHouseData is defined to format the house data correctly
-                return $this->formatHouseData($house, $house->building, $house->building->estate);
+                return $this->formatHouseData($house, $house->building, $house->building->estate, $user);
             });
 
             return response()->json([
@@ -155,6 +158,8 @@ class HouseController extends Controller
                 ]
             )['keyword'];
 
+            $user = $this->getUserByRequest($request);
+
             // Search in houses, estates, and buildings
             $houses = House::where('description', 'LIKE', "%{$keyword}%")
                 ->orWhereHas('building', function ($query) use ($keyword) {
@@ -171,12 +176,12 @@ class HouseController extends Controller
                 ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
                 ->get();
 
-            $formattedHouses = $houses->map(function ($house) {
+            $formattedHouses = $houses->map(function ($house) use($user) {
                 // Extract building and estate from the house
                 $building = $house->building;
                 $estate = $building ? $building->estate : null;
 
-                return $this->formatHouseData($house, $building, $estate);
+                return $this->formatHouseData($house, $building, $estate, $user);
             });
 
             return response()->json([
