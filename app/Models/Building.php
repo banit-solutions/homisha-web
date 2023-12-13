@@ -18,18 +18,23 @@ class Building extends Model
         return $this->hasMany(House::class);
     }
 
-    public function scopeNearby($query, $latitude, $longitude, $distance)
+    public function scopeNearby($query, $latitude, $longitude, $radius = 5)
     {
-        $haversine = "(6371 * acos(cos(radians($latitude)) 
-                   * cos(radians(buildings.latitude)) 
-                   * cos(radians(buildings.longitude) 
-                   - radians($longitude)) 
-                   + sin(radians($latitude)) 
-                   * sin(radians(buildings.latitude))))";
+        $earthRadius = 6371; // Earth's radius in kilometers
 
-        return $query->select('*')
-            ->selectRaw("{$haversine} as distance")
-            ->havingRaw("distance < ?", [$distance]);
+        $haversine = "(
+        $earthRadius * acos(
+            cos(radians($latitude))
+            * cos(radians(latitude))
+            * cos(radians(longitude) - radians($longitude))
+            + sin(radians($latitude))
+            * sin(radians(latitude))
+        )
+    )";
+
+        return $query->select('buildings.*')
+            ->selectRaw("{$haversine} AS distance")
+            ->whereRaw("{$haversine} < ?", [$radius])
+            ->orderBy('distance');
     }
-
 }
