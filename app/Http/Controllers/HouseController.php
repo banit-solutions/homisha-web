@@ -82,6 +82,70 @@ class HouseController extends Controller
         );
     }
 
+    public function searchByLocation(Request $request)
+    {
+        // Validate the request data
+        $validatedData = $request->validate([
+            'longitude' => 'required|numeric',
+            'latitude' => 'required|numeric',
+        ]);
+
+        // Assuming you have a scopeNearby in your Building model
+        $houses = House::whereHas('building', function ($query) use ($validatedData) {
+            $query->nearby($validatedData['latitude'], $validatedData['longitude'], 5);
+        })->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])->get();
+
+        $formattedHouses = $houses->map(function ($house) {
+            // Ensure related building and estate are loaded
+            $building = $house->building;
+            $estate = $building ? $building->estate : null;
+            return $this->formatHouseData($house, $building, $estate);
+        });
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Houses found near the specified location.',
+            'data' => $formattedHouses
+        ]);
+    }
+
+    public function searchByKeyword(Request $request)
+    {
+        // Validate the request data
+        $keyword = $request->validate([
+            'keyword' => 'required|string',
+        ])['keyword'];
+
+        // Search in houses, estates, and buildings
+        $houses = House::where('description', 'LIKE', "%{$keyword}%")
+            ->orWhereHas('building', function ($query) use ($keyword) {
+                $query->where('name', 'LIKE', "%{$keyword}%")
+                    ->orWhere('description', 'LIKE', "%{$keyword}%");
+            })
+            ->orWhereHas('building.estate', function ($query) use ($keyword) {
+                $query->where('name', 'LIKE', "%{$keyword}%")
+                    ->orWhere('description', 'LIKE', "%{$keyword}%");
+            })
+            ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
+            ->get();
+
+        $formattedHouses = $houses->map(function ($house) {
+            // Extract building and estate from the house
+            $building = $house->building;
+            $estate = $building ? $building->estate : null;
+
+            return $this->formatHouseData($house, $building, $estate);
+        });
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Houses found matching the keyword.',
+            'data' => $formattedHouses
+        ]);
+    }
+
+
+
     public function updateHouseViews(Request $request)
     {
         $houseId = $request->house_id;

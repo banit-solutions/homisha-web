@@ -47,6 +47,8 @@ Route::middleware('api.auth')->group(
                 Route::post('/save/view', [HouseController::class, 'updateHouseViews']);
                 Route::post('/add/favorite', [HouseController::class, 'addFavoriteHouse']);
                 Route::post('/save/review', [HouseController::class, 'recordReview']);
+                Route::post('/find-by/location', [HouseController::class, 'searchByLocation']);
+                Route::post('/find-by/keyword', [HouseController::class, 'searchByKeyword']);
 
                 Route::delete('/delete/favorite/{id}', [HouseController::class, 'deleteFavorite']);
             }
