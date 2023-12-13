@@ -28,8 +28,10 @@ class Controller extends BaseController
         return User::where('remember_token', $request->header('Authorization'))->first();
     }
 
-    public function formatHouseData($house, $building, $estate)
+    public function formatHouseData($house, $building, $estate, $user = null)
     {
+        $isFavorite = $user === null ? false : $user->favorites()->where('house_id', $house->id)->exists();
+
         return [
             'id' => $house->id,
             'building_id' => $house->building_id,
@@ -42,6 +44,7 @@ class Controller extends BaseController
             'total_rooms' => $house->total_rooms,
             'vacancies' => $house->vacancies,
             'description' => $house->description,
+            'is_favorite' => $isFavorite,
             'created_at' => $house->created_at,
             'updated_at' => $house->updated_at,
             'reviews' => $house->reviews->map(function ($review) {
