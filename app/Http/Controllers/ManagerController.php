@@ -95,57 +95,6 @@ class ManagerController extends Controller
         ];
     }
 
-    private function formatHouseData($house, $building, $estate)
-    {
-        return [
-            'id' => $house->id,
-            'building_id' => $house->building_id,
-            'category' => $house->category,
-            'rent' => $house->rent,
-            'bedrooms' => $house->bedrooms,
-            'kitchens' => $house->kitchens,
-            'bathrooms' => $house->bathrooms,
-            'balconies' => $house->balconies,
-            'total_rooms' => $house->total_rooms,
-            'vacancies' => $house->vacancies,
-            'description' => $house->description,
-            'created_at' => $house->created_at,
-            'updated_at' => $house->updated_at,
-            'reviews' => $house->reviews->map(function ($review) {
-                return [
-                    'id' => $review->user->id,
-                    'name' => $review->user->name,
-                    'profile_picture' => $review->user->profile_image
-                ];
-            }),
-            'facilities' => $house->facilities,
-            'house_views' => $house->houseViews,
-            'gallery' => $house->gallery,
-            'building' => [
-                'id' => $building->id,
-                'estate_id' => $building->estate_id,
-                'name' => $building->name,
-                'profile_image' => $building->profile_image,
-                'occupation_certificate' => $building->occupation_certificate,
-                'longitude' => $building->longitude,
-                'latitude' => $building->latitude,
-                'description' => $building->description,
-                'status' => $building->status,
-                'created_at' => $building->created_at,
-                'updated_at' => $building->updated_at,
-                'estate' => [
-                    'id' => $estate->id,
-                    'manager_id' => $estate->manager_id,
-                    'name' => $estate->name,
-                    'description' => $estate->description,
-                    'created_at' => $estate->created_at,
-                    'updated_at' => $estate->updated_at,
-                    'manager' => $estate->manager
-                ]
-            ]
-        ];
-    }
-
     public function storeEnquiry(Request $request)
     {
         // Validate the request data
