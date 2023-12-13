@@ -43,10 +43,11 @@ class UserController extends Controller
                 ];
             }
 
+            // Commit transaction
             DB::commit();
             // Return as a JSON response
             return response()->json($response, 200);
-            // Commit transaction
+
 
         } catch (Exception $e) {
             DB::rollback();
