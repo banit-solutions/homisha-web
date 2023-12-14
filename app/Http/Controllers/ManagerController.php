@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Complaint;
 use App\Models\Enquiry;
 use App\Models\Manager;
+use Exception;
 use Illuminate\Http\Request;
 
 class ManagerController extends Controller
@@ -13,7 +14,9 @@ class ManagerController extends Controller
     {
         $user = $this->getUserByRequest($request);
 
-        $managers = Manager::with(['estates.buildings.houses' => function ($query) {
+        $managers = Manager::with(['estates.buildings' => function ($query) {
+            $query->where('status', 1);
+        }, 'estates.buildings.houses' => function ($query) {
             $query->with(['facilities', 'houseViews', 'gallery', 'reviews.user']);
         }])
             ->get()
@@ -33,6 +36,7 @@ class ManagerController extends Controller
         ], 200);
     }
 
+
     public function getPaginatedManagers(Request $request)
     {
         $page = $request->get('page', 1);
@@ -40,9 +44,13 @@ class ManagerController extends Controller
 
         $user = $this->getUserByRequest($request);
 
-        $paginatedManagers = Manager::with(['estates.buildings.houses' => function ($query) {
+        // Include only buildings with status == 1 in the nested relation
+        $paginatedManagers = Manager::with(['estates.buildings' => function ($query) {
+            $query->where('status', 1);
+        }, 'estates.buildings.houses' => function ($query) {
             $query->with(['facilities', 'houseViews', 'gallery', 'reviews.user']);
-        }])->paginate($perPage, ['*'], 'page', $page);
+        }])
+            ->paginate($perPage, ['*'], 'page', $page);
 
         $managers = collect($paginatedManagers->items())->map(function ($manager) use ($user) {
             return $this->formatManagerData($manager, $user);
@@ -56,12 +64,11 @@ class ManagerController extends Controller
                 'total' => $paginatedManagers->total(),
                 'currentPage' => $paginatedManagers->currentPage(),
                 'perPage' => $paginatedManagers->perPage(),
-                'lastPage' => $paginatedManagers->lastPage(),
-                'nextPageUrl' => $paginatedManagers->nextPageUrl(),
-                'prevPageUrl' => $paginatedManagers->previousPageUrl(),
+                'lastPage' => $paginatedManagers->lastPage()
             ]
         ], 200);
     }
+
 
     private function formatManagerData($manager, $user)
     {
@@ -101,42 +108,56 @@ class ManagerController extends Controller
 
     public function storeEnquiry(Request $request)
     {
-        // Validate the request data
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'manager_id' => 'required|exists:managers,id',
-            'house_id' => 'required|exists:houses,id',
-            'title' => 'required|string|max:255',
-            'message' => 'required|string'
-        ]);
+        try {
+            // Validate the request data
+            $validated = $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'manager_id' => 'required|exists:managers,id',
+                'house_id' => 'required|exists:houses,id',
+                'title' => 'required|string|max:255',
+                'message' => 'required|string'
+            ]);
 
-        // Create the enquiry
-        $enquiry = new Enquiry($validated);
-        $enquiry->save();
+            // Create the enquiry
+            $enquiry = new Enquiry($validated);
+            $enquiry->save();
 
-        return response()->json([
-            'error' => false,
-            'message' => 'Enquiry submitted successfully.',
-        ]);
+            return response()->json([
+                'error' => false,
+                'message' => 'Enquiry submitted successfully.',
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     public function storeComplaint(Request $request)
     {
-        // Validate the request data
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'manager_id' => 'required|exists:managers,id',
-            'message' => 'required|string',
-        ]);
+        try {
+            // Validate the request data
+            $validated = $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'manager_id' => 'required|exists:managers,id',
+                'message' => 'required|string',
+            ]);
 
-        // Create the complaint
-        $complaint = new Complaint($validated);
-        $complaint->save();
+            // Create the complaint
+            $complaint = new Complaint($validated);
+            $complaint->save();
 
-        return response()->json([
-            'error' => false,
-            'message' => 'Complaint submitted successfully.',
-        ]);
+            return response()->json([
+                'error' => false,
+                'message' => 'Complaint submitted successfully.',
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
 }
