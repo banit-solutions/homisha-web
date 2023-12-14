@@ -21,12 +21,17 @@ class HouseController extends Controller
         // Fetch user preferences
         $preferences = $user->userPreferences;
 
-        // Query houses based on user preferences (example: filtering by county and rent range)
-        $houses = House::whereHas('building.estate')
+        // Query houses based on user preferences and building status
+        $houses = House::whereHas('building', function ($query) {
+            $query->where('status', 1); // Only include buildings with status == 1
+        })
+            ->whereHas('building.estate')
             ->where(function ($query) use ($preferences) {
                 $query->where('vacancies', '>', 0)
-                    ->whereBetween('rent', [$preferences->min_rent, $preferences->max_rent])
-                    ->orWhere('category', $preferences->house_category);
+                    ->where(function ($q) use ($preferences) {
+                        $q->whereBetween('rent', [$preferences->min_rent, $preferences->max_rent])
+                            ->orWhere('category', $preferences->house_category);
+                    });
             })
             ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
             ->inRandomOrder()
@@ -44,7 +49,6 @@ class HouseController extends Controller
     }
 
 
-
     public function getRandomHouses(Request $request)
     {
         $page = $request->get('page', 1);
@@ -55,6 +59,9 @@ class HouseController extends Controller
 
         // Query houses randomly and paginate the results
         $houses = House::where('vacancies', '>', 0)
+            ->whereHas('building', function ($query) {
+                $query->where('status', 1); // Only include buildings with status == 1
+            })
             ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
             ->inRandomOrder()
             ->paginate($perPage, ['*'], 'page', $page);
@@ -101,7 +108,7 @@ class HouseController extends Controller
             $user = $this->getUserByRequest($request);
 
             // Fetch all buildings first (consider limiting this query to a reasonable bounding box if possible)
-            $buildings = Building::where('status', 1);
+            $buildings = Building::where('status', 1)->get();
 
             // Filter the buildings using PHP to calculate the distance
             $nearbyBuildings = $buildings->filter(function ($building) use ($validatedData, $earthRadius, $radius) {
@@ -129,7 +136,7 @@ class HouseController extends Controller
                 ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
                 ->get();
 
-            $formattedHouses = $houses->map(function ($house) use($user) {
+            $formattedHouses = $houses->map(function ($house) use ($user) {
                 // Assuming formatHouseData is defined to format the house data correctly
                 return $this->formatHouseData($house, $house->building, $house->building->estate, $user);
             });
@@ -152,23 +159,27 @@ class HouseController extends Controller
     {
         try {
             // Validate the request data
-            $keyword = $request->validate(
-                [
-                    'keyword' => 'required|string',
-                ]
-            )['keyword'];
+            $keyword = $request->validate([
+                'keyword' => 'required|string',
+            ])['keyword'];
 
             $user = $this->getUserByRequest($request);
 
             // Search in houses, estates, and buildings
-            $houses = House::where('description', 'LIKE', "%{$keyword}%")
-                ->orWhereHas('building', function ($query) use ($keyword) {
-                    $query->where('name', 'LIKE', "%{$keyword}%")
-                        ->orWhere('description', 'LIKE', "%{$keyword}%");
-                })
+            $houses = House::whereHas('building', function ($query) use ($keyword) {
+                $query->where('status', 1) // Only include buildings with status == 1
+                    ->where(function ($q) use ($keyword) {
+                        $q->where('name', 'LIKE', "%{$keyword}%")
+                            ->orWhere('description', 'LIKE', "%{$keyword}%");
+                    });
+            })
                 ->orWhereHas('building.estate', function ($query) use ($keyword) {
-                    $query->where('name', 'LIKE', "%{$keyword}%")
-                        ->orWhere('description', 'LIKE', "%{$keyword}%");
+                    $query->whereHas('building', function ($q) {
+                        $q->where('status', 1); // Only include estates of buildings with status == 1
+                    })->where(function ($q) use ($keyword) {
+                        $q->where('name', 'LIKE', "%{$keyword}%")
+                            ->orWhere('description', 'LIKE', "%{$keyword}%");
+                    });
                 })
                 ->orWhereHas('facilities', function ($query) use ($keyword) {
                     $query->where('name', 'LIKE', "%{$keyword}%");
@@ -176,7 +187,7 @@ class HouseController extends Controller
                 ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
                 ->get();
 
-            $formattedHouses = $houses->map(function ($house) use($user) {
+            $formattedHouses = $houses->map(function ($house) use ($user) {
                 // Extract building and estate from the house
                 $building = $house->building;
                 $estate = $building ? $building->estate : null;
@@ -195,9 +206,7 @@ class HouseController extends Controller
                 'message' => $e->getMessage()
             ]);
         }
-
     }
-
 
 
     public function updateHouseViews(Request $request)
