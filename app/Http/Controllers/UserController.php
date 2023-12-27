@@ -113,11 +113,11 @@ class UserController extends Controller
             DB::commit();
 
             // Return a response
-            return response()->json(['error' => false, 'message' => 'User registered successfully'], 201);
+            return response()->json(['error' => false, 'message' => 'User registered successfully'], 200);
         } catch (Exception $e) {
             DB::rollBack();
             // Handle the exception
-            return response()->json(['error' => true, 'message' => 'Registration failed. Please check your details and try again. ' . $e->getMessage()], 500);
+            return response()->json(['error' => true, 'message' => 'Registration failed. Please check your details and try again. ' . $e->getMessage()], 200);
         }
     }
 
