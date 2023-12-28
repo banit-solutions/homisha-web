@@ -87,6 +87,7 @@ class UserController extends Controller
     public function register(Request $request)
     {
         try {
+            $locationName = $this->getLocationName($request->latitude, $request->longitude);
             DB::beginTransaction();
 
             // Create the user
@@ -98,6 +99,7 @@ class UserController extends Controller
             $user->longitude = $request->longitude;
             $user->latitude = $request->latitude;
             $user->actively_searching = $request->actively_searching;
+            $user->location_name = $locationName;
             $user->save();
 
             // Create the user preferences
@@ -113,11 +115,11 @@ class UserController extends Controller
             DB::commit();
 
             // Return a response
-            return response()->json(['error' => false, 'message' => 'User registered successfully'], 201);
+            return response()->json(['error' => false, 'message' => 'User registered successfully'], 200);
         } catch (Exception $e) {
             DB::rollBack();
             // Handle the exception
-            return response()->json(['error' => true, 'message' => 'Registration failed. Please check your details and try again. ' . $e->getMessage()], 500);
+            return response()->json(['error' => true, 'message' => 'Registration failed. Please check your details and try again. ' . $e->getMessage()], 200);
         }
     }
 

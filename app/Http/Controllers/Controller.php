@@ -82,5 +82,39 @@ class Controller extends BaseController
         ];
     }
 
+    function getLocationName($lat, $lon)
+    {
+        $url = "https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lon";
+
+        // Initialize CURL:
+        $ch = curl_init($url);
+
+        // Set headers to mimic a browser request
+        $headers = [
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3', // Example Chrome User-Agent
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language: en-US,en;q=0.5',
+        ];
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+        // Get the JSON response:
+        $json = curl_exec($ch);
+        curl_close($ch);
+
+        // Decode the JSON response
+        $data = json_decode($json);
+
+
+        // Check if the response is valid and return the address part
+        if (isset($data->display_name)) {
+            return $data->display_name;
+        } else {
+            return "No Location Name";
+        }
+    }
+
 
 }
