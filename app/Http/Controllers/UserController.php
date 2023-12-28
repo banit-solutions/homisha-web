@@ -87,6 +87,7 @@ class UserController extends Controller
     public function register(Request $request)
     {
         try {
+            $locationName = $this->getLocationName($request->latitude, $request->longitude);
             DB::beginTransaction();
 
             // Create the user
@@ -98,6 +99,7 @@ class UserController extends Controller
             $user->longitude = $request->longitude;
             $user->latitude = $request->latitude;
             $user->actively_searching = $request->actively_searching;
+            $user->location_name = $locationName;
             $user->save();
 
             // Create the user preferences
