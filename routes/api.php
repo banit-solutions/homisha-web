@@ -44,6 +44,7 @@ Route::middleware('api.auth')->group(
                 Route::get('/all', [HouseController::class, 'getRandomHouses']);
                 Route::get('/my', [HouseController::class, 'getHouses']);
                 Route::get('/find-by/location', [HouseController::class, 'searchByLocation']);
+                Route::post('/view/favorite', [HouseController::class, 'getFavoriteHouses']);
 
                 Route::post('/save/view', [HouseController::class, 'updateHouseViews']);
                 Route::post('/add/favorite', [HouseController::class, 'addFavoriteHouse']);

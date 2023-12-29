@@ -17,7 +17,7 @@ class ManagerController extends Controller
         $managers = Manager::with(['estates.buildings' => function ($query) {
             $query->where('status', 1);
         }, 'estates.buildings.houses' => function ($query) {
-            $query->with(['facilities', 'houseViews', 'gallery', 'reviews.user']);
+            $query->with(['facilities', 'houseViews', 'gallery', 'reviews']);
         }])
             ->get()
             ->map(function ($manager) use ($user) {
@@ -48,7 +48,7 @@ class ManagerController extends Controller
         $paginatedManagers = Manager::with(['estates.buildings' => function ($query) {
             $query->where('status', 1);
         }, 'estates.buildings.houses' => function ($query) {
-            $query->with(['facilities', 'houseViews', 'gallery', 'reviews.user']);
+            $query->with(['facilities', 'houseViews', 'gallery', 'reviews']);
         }])
             ->paginate($perPage, ['*'], 'page', $page);
 

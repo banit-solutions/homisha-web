@@ -25,6 +25,6 @@ class User extends Authenticatable
 
     public function favorites()
     {
-        return $this->hasMany(Favorite::class); // Adjust the relationship type if necessary
+        return $this->hasMany(Favorite::class);
     }
 }

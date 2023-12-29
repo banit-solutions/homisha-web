@@ -47,13 +47,7 @@ class Controller extends BaseController
             'is_favorite' => $isFavorite,
             'created_at' => $house->created_at,
             'updated_at' => $house->updated_at,
-            'reviews' => $house->reviews->map(function ($review) {
-                return [
-                    'id' => $review->user->id,
-                    'name' => $review->user->name,
-                    'profile_picture' => $review->user->profile_image
-                ];
-            }),
+            'reviews' => $house->reviews,
             'facilities' => $house->facilities,
             'house_views' => $house->houseViews,
             'gallery' => $house->gallery,
