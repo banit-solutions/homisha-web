@@ -48,7 +48,6 @@ class HouseController extends Controller
         return response()->json(['error' => false, 'message' => 'Data found', 'houses' => $houses], 200);
     }
 
-
     public function getRandomHouses(Request $request)
     {
         $page = $request->get('page', 1);
@@ -92,14 +91,11 @@ class HouseController extends Controller
         );
     }
 
-
     public function searchByLocation(Request $request)
     {
         try {
-            $validatedData = $request->validate([
-                'longitude' => 'required|numeric',
-                'latitude' => 'required|numeric',
-            ]);
+            $longitude = $request->get('longitude', 0);
+            $latitude = $request->get('latitude', 0);
 
             $earthRadius = 6371; // Radius of the earth in kilometers.
             $radius = 5; // Radius of the search in kilometers.
@@ -111,9 +107,9 @@ class HouseController extends Controller
             $buildings = Building::where('status', 1)->get();
 
             // Filter the buildings using PHP to calculate the distance
-            $nearbyBuildings = $buildings->filter(function ($building) use ($validatedData, $earthRadius, $radius) {
-                $latFrom = deg2rad($validatedData['latitude']);
-                $lonFrom = deg2rad($validatedData['longitude']);
+            $nearbyBuildings = $buildings->filter(function ($building) use ($longitude, $latitude, $earthRadius, $radius) {
+                $latFrom = deg2rad($latitude);
+                $lonFrom = deg2rad($longitude);
                 $latTo = deg2rad($building->latitude);
                 $lonTo = deg2rad($building->longitude);
 
