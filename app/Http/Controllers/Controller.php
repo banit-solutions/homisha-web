@@ -31,6 +31,7 @@ class Controller extends BaseController
     public function formatHouseData($house, $building, $estate, $user = null)
     {
         $isFavorite = $user === null ? false : $user->favorites()->where('house_id', $house->id)->exists();
+        $averageReview = $house->reviews->avg('ratings');
 
         return [
             'id' => $house->id,
@@ -48,6 +49,7 @@ class Controller extends BaseController
             'created_at' => $house->created_at,
             'updated_at' => $house->updated_at,
             'reviews' => $house->reviews,
+            'average_review' => $averageReview == null ? 0 : $averageReview,
             'facilities' => $house->facilities,
             'house_views' => $house->houseViews,
             'gallery' => $house->gallery,
