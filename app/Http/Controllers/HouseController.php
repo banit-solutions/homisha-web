@@ -33,7 +33,7 @@ class HouseController extends Controller
                             ->orWhere('category', $preferences->house_category);
                     });
             })
-            ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
+            ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews'])
             ->inRandomOrder()
             ->take(6)
             ->get();
@@ -61,7 +61,7 @@ class HouseController extends Controller
             ->whereHas('building', function ($query) {
                 $query->where('status', 1); // Only include buildings with status == 1
             })
-            ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
+            ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews']) // Load reviews and their corresponding users
             ->inRandomOrder()
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -69,6 +69,11 @@ class HouseController extends Controller
         $housesCollection = $houses->getCollection()->map(function ($house) use ($user) {
             $building = $house->building ?? null;
             $estate = $building ? $building->estate ?? null : null;
+            // Ensure that reviews include all necessary attributes and user information
+            $house->reviews->each(function ($review) {
+                $review->makeVisible(['message', 'ratings']);
+                // add any other attributes you might have hidden globally
+            });
             return $this->formatHouseData($house, $building, $estate, $user);
         });
 
@@ -90,6 +95,7 @@ class HouseController extends Controller
             200
         );
     }
+
 
     public function searchByLocation(Request $request)
     {
@@ -129,7 +135,7 @@ class HouseController extends Controller
 
             // Now get the houses related to these buildings
             $houses = House::whereIn('building_id', $houseIds)
-                ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
+                ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews'])
                 ->get();
 
             $formattedHouses = $houses->map(function ($house) use ($user) {
@@ -180,7 +186,7 @@ class HouseController extends Controller
                 ->orWhereHas('facilities', function ($query) use ($keyword) {
                     $query->where('name', 'LIKE', "%{$keyword}%");
                 })
-                ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews.user'])
+                ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews'])
                 ->get();
 
             $formattedHouses = $houses->map(function ($house) use ($user) {
@@ -203,7 +209,6 @@ class HouseController extends Controller
             ]);
         }
     }
-
 
     public function updateHouseViews(Request $request)
     {
@@ -275,4 +280,38 @@ class HouseController extends Controller
             'data' => $review,
         ]);
     }
+
+    public function getFavoriteHouses(Request $request)
+    {
+        // Get user from remember_token
+        $user = $this->getUserByRequest($request);
+
+        // Ensure the user exists and has favorites
+        if (!$user || !$user->favorites()->exists()) {
+            return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
+        }
+
+        // Query favorite houses based on user preferences and building status
+        $houses = House::whereHas('building', function ($query) {
+            $query->where('status', 1); // Only include buildings with status == 1
+        })
+            ->whereHas('building.estate')
+            ->whereHas('favorites', function ($query) use ($user) {
+                $query->where('user_id', $user->id); // Filter by user's favorites
+            })
+            ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews'])
+            ->inRandomOrder()
+            ->take(6)
+            ->get();
+
+        // Transform the house data
+        $houses = $houses->map(function ($house) use ($user) {
+            $building = $house->building ?? null;
+            $estate = $building ? $building->estate ?? null : null;
+            return $this->formatHouseData($house, $building, $estate, $user);
+        });
+
+        return response()->json(['error' => false, 'message' => 'Favorite houses found', 'houses' => $houses], 200);
+    }
+
 }
