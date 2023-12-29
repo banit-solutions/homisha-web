@@ -291,14 +291,15 @@ class HouseController extends Controller
             return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
         }
 
+        // Get the IDs of the user's favorite houses
+        $favoriteHouseIds = $user->favorites->pluck('house_id');
+
         // Query favorite houses based on user preferences and building status
         $houses = House::whereHas('building', function ($query) {
             $query->where('status', 1); // Only include buildings with status == 1
         })
             ->whereHas('building.estate')
-            ->whereHas('favorites', function ($query) use ($user) {
-                $query->where('user_id', $user->id); // Filter by user's favorites
-            })
+            ->whereIn('id', $favoriteHouseIds) // Filter by user's favorite houses
             ->with(['building.estate.manager', 'facilities', 'houseViews', 'gallery', 'reviews'])
             ->inRandomOrder()
             ->take(6)
