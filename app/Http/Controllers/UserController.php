@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 
 class UserController extends Controller
 {
@@ -145,23 +146,58 @@ class UserController extends Controller
 
     public function updateUserProfileImage(Request $request)
     {
+        // Authenticate and retrieve user
         $user = $this->getUserByRequest($request);
+        if (!$user) {
+            return response()->json([
+                'error' => true,
+                'message' => 'User not found.',
+            ], 404);
+        }
 
+        // Validate the incoming request
         $request->validate([
             'profile_image' => 'required|image|max:2048', // 2MB Max
         ]);
 
-        $path = $request->file('profile_image')->store('profile_images', 'public');
-        $url = Storage::url($path);
+        try {
+            // Handle and delete the old image if it exists
+            if ($user->profile_image) {
+                $this->deleteImageFromStorage($user->profile_image);
+            }
 
-        $user->profile_image = $url;
-        $user->save();
+            // Get the image file from the request
+            $imageFile = $request->file('profile_image');
 
-        return response()->json([
-            'error' => false,
-            'message' => 'Profile image updated successfully.',
-        ]);
+            // Define the path and filename
+            $filename = 'profile_image-' . $user->id . '-' . sha1(time()) . '.' . $imageFile->getClientOriginalExtension();
+            $path = 'profile_images/' . $filename;
+
+            // Store the new image
+            $imageFile->storeAs('public', $path);
+
+            // Generate the URL for the stored image
+            $url = asset('storage/' . $path);
+
+            // Update user's profile image with the new path
+            $user->profile_image = $url;
+            $user->save();
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Profile image updated successfully.',
+                'user' => $user
+            ]);
+        } catch (Exception $e) {
+            // Handle any exceptions during the process
+            return response()->json([
+                'error' => true,
+                'message' => 'Failed to update profile image. ' . $e->getMessage(),
+            ], 200);
+        }
     }
+
+
 
     public function updateUserLocation(Request $request)
     {
@@ -208,6 +244,26 @@ class UserController extends Controller
             'error' => false,
             'message' => 'User preferences updated successfully.',
         ]);
+    }
+
+
+    function deleteImageFromStorage($url)
+    {
+        // Parse the URL to get the path after '/storage/'
+        $path = parse_url($url, PHP_URL_PATH); // gets the path part of the URL
+        $storagePath = 'public/' . explode('/storage/', $path)[1]; // adjust the path to match the storage directory
+
+        // Check if the file exists and delete it
+        if (Storage::exists($storagePath)) {
+            if (!Storage::delete($storagePath)) {
+                // If the deletion is unsuccessful, throw an exception
+                throw new Exception("Failed to delete the image.");
+            }
+            // If everything goes well, return nothing
+        } else {
+            // If the file doesn't exist, throw an exception
+            throw new Exception("File does not exist." . $storagePath);
+        }
     }
 
 
