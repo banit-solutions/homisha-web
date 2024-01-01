@@ -176,12 +176,8 @@ class HouseController extends Controller
                     });
             })
                 ->orWhereHas('building.estate', function ($query) use ($keyword) {
-                    $query->whereHas('building', function ($q) {
-                        $q->where('status', 1); // Only include estates of buildings with status == 1
-                    })->where(function ($q) use ($keyword) {
-                        $q->where('name', 'LIKE', "%{$keyword}%")
-                            ->orWhere('description', 'LIKE', "%{$keyword}%");
-                    });
+                    $query->where('name', 'LIKE', "%{$keyword}%")
+                        ->orWhere('description', 'LIKE', "%{$keyword}%");
                 })
                 ->orWhereHas('facilities', function ($query) use ($keyword) {
                     $query->where('name', 'LIKE', "%{$keyword}%");
@@ -200,7 +196,7 @@ class HouseController extends Controller
             return response()->json([
                 'error' => false,
                 'message' => 'Houses found matching the keyword.',
-                'data' => $formattedHouses
+                'houses' => $formattedHouses
             ]);
         } catch (Exception $e) {
             return response()->json([
