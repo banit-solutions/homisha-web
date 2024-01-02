@@ -19,6 +19,27 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('api.auth')->group(
     function () {
+
+        Route::group(
+            ['prefix' => 'user'],
+            function () {
+                Route::get('/notification', [UserController::class, 'getUserNotifications']);
+                Route::post('/feedback', [UserController::class, 'sendFeedback']);
+
+                Route::group(
+                    ['prefix' => '/update'],
+                    function () {
+                        Route::put('/profile', [UserController::class, 'updateUser']);
+                        Route::put('/location', [UserController::class, 'updateUserLocation']);
+                        Route::post('/profile-image', [UserController::class, 'updateUserProfileImage']);
+                        Route::put('/preference', [UserController::class, 'updateUserPreferences']);
+                    }
+                );
+            }
+        );
+
+
+
         Route::group(
             ['prefix' => 'auth'],
             function () {
@@ -28,15 +49,6 @@ Route::middleware('api.auth')->group(
             }
         );
 
-        Route::group(
-            ['prefix' => 'user/update'],
-            function () {
-                Route::put('/profile', [UserController::class, 'updateUser']);
-                Route::put('/location', [UserController::class, 'updateUserLocation']);
-                Route::post('/profile-image', [UserController::class, 'updateUserProfileImage']);
-                Route::put('/preference', [UserController::class, 'updateUserPreferences']);
-            }
-        );
 
         Route::group(
             ['prefix' => 'house'],

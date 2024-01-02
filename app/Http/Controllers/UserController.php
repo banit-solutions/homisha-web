@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Mail\OTPMail;
+use App\Models\Feedback;
+use App\Models\Notification;
 use App\Models\User;
 use App\Models\UserPreference;
 use Exception;
@@ -263,6 +265,112 @@ class UserController extends Controller
         } else {
             // If the file doesn't exist, throw an exception
             throw new Exception("File does not exist." . $storagePath);
+        }
+    }
+
+
+    public function getUserNotifications(Request $request)
+    {
+        // Get user from remember_token
+        $user = $this->getUserByRequest($request);
+
+        // Ensure the user exists and has favorites
+        if (!$user) {
+            return response()->json(['error' => true, 'message' => 'Unauthorized access'], 401);
+        }
+        // Set a default value for perPage, but allow it to be overridden by the request
+        $page = $request->get('page', 1);
+        $perPage = $request->get('perPage', 10);
+
+        // Get the distinct dates with notifications for the user or for all users, and paginate them
+        $distinctDates = Notification::whereIn('recipient', [$user->id, 'all'])
+            ->select(DB::raw('DATE(created_at) as notification_date'))
+            ->distinct()
+            ->orderBy('notification_date', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // For each paginated date, fetch the notifications
+        $notificationsGroupedByDate = [];
+        foreach ($distinctDates as $date) {
+            $notificationsForDate = Notification::whereIn('recipient', [$user->id, 'all'])
+                ->whereDate('created_at', $date->notification_date)
+                ->get();
+
+            $notificationsGroupedByDate[] = [
+                'date' => $date->notification_date,
+                'notifications' => $notificationsForDate
+            ];
+        }
+
+        // Return the appropriate response
+        if (count($notificationsGroupedByDate) > 0) {
+            return response()->json(
+                [
+                    'error' => false,
+                    'message' => "Notifications found",
+                    'notification_group' => $notificationsGroupedByDate,
+                    'pagination' => [
+                        'total' => $distinctDates->total(),
+                        'currentPage' => $distinctDates->currentPage(),
+                        'perPage' => $distinctDates->perPage(),
+                        'lastPage' => $distinctDates->lastPage()
+                    ]
+                ],
+                200
+            );
+        } else {
+            return response()->json(
+                [
+                    'error' => true,
+                    'message' => "No notifications found"
+                ],
+                200
+            );
+        }
+    }
+
+
+    public function sendFeedback(Request $request)
+    {
+        try {
+            // Get user from remember_token
+            $user = $this->getUserByRequest($request);
+
+            // Ensure the user exists and has favorites
+            if (!$user) {
+                return response()->json(['error' => true, 'message' => 'Unauthorized access'], 401);
+            }
+
+            $customerID = $user->id;
+            $feedback = $request->feedback;
+            $category = $request->category;
+
+            Feedback::create(
+                [
+                    'user_id' => $customerID,
+                    'feedback' => $feedback,
+                    'category' => $category
+                ]
+            );
+
+            // Prepare error response
+            $response = [
+                'error' => false,
+                'message' => "Thank you. We have received your feedback. We value your feedback."
+            ];
+
+            // Return as a JSON response
+            return response()->json($response, 200);
+
+        } catch (Exception $e) {
+            // Prepare error response
+            $response = [
+                'error' => true,
+                'message' => "Failed to send feedback. Please try again."
+            ];
+
+            // Return as a JSON response
+            return response()->json($response, 200);
         }
     }
 
