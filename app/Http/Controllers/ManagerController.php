@@ -111,12 +111,21 @@ class ManagerController extends Controller
         try {
             // Validate the request data
             $validated = $request->validate([
-                'user_id' => 'required|exists:users,id',
                 'manager_id' => 'required|exists:managers,id',
                 'house_id' => 'required|exists:houses,id',
                 'title' => 'required|string|max:255',
                 'message' => 'required|string'
             ]);
+
+            // Get user from remember_token
+            $user = $this->getUserByRequest($request);
+
+            // Ensure the user exists and has favorites
+            if (!$user) {
+                return response()->json(['error' => true, 'message' => 'Unauthorized access'], 401);
+            }
+
+            $validated['user_id'] = $user->id;
 
             // Create the enquiry
             $enquiry = new Enquiry($validated);
