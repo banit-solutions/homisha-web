@@ -18,6 +18,11 @@ class HouseController extends Controller
         // Get user from remember_token
         $user = $this->getUserByRequest($request);
 
+        // Ensure the user exists and has favorites
+        if (!$user) {
+            return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
+        }
+
         // Fetch user preferences
         $preferences = $user->userPreferences;
 
@@ -222,45 +227,70 @@ class HouseController extends Controller
 
     public function addFavoriteHouse(Request $request)
     {
+        try {
+            $houseId = $request->house_id;
 
-        $houseId = $request->house_id;
+            $user = $this->getUserByRequest($request);
 
-        $user = $this->getUserByRequest($request);
+            // Ensure the user exists and has favorites
+            if (!$user) {
+                return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
+            }
 
-        $favorite = Favorite::firstOrCreate([
-            'user_id' => $user->id,
-            'house_id' => $houseId
-        ]);
+            $favorite = Favorite::firstOrCreate([
+                'user_id' => $user->id,
+                'house_id' => $houseId
+            ]);
 
-        return response()->json([
-            'error' => false,
-            'message' => 'House added to favorites successfully.',
-            'data' => $favorite
-        ], 200);
+            return response()->json([
+                'error' => false,
+                'message' => 'House added to favorites successfully.',
+                'favorite' => $favorite
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Something went wrong. Try again please.'
+            ], 200);
+        }
     }
 
     public function deleteFavorite($id)
     {
-        $favorite = Favorite::find($id);
+        try {
+            $favorite = Favorite::find($id);
 
-        if ($favorite) {
-            $favorite->delete();
+            if ($favorite) {
+                $favorite->delete();
+
+                return response()->json([
+                    'error' => false,
+                    'message' => 'Favorite removed successfully.',
+                    'favorite' => $favorite
+                ], 200);
+            }
 
             return response()->json([
-                'error' => false,
-                'message' => 'Favorite removed successfully.',
+                'error' => true,
+                'message' => 'Favorite not found.',
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Something went wrong. Try again please.'
             ], 200);
         }
-
-        return response()->json([
-            'error' => true,
-            'message' => 'Favorite not found.',
-        ], 404);
     }
 
     public function recordReview(Request $request)
     {
         $user = $this->getUserByRequest($request);
+
+        // Ensure the user exists and has favorites
+        if (!$user) {
+            return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
+        }
+
         $houseId = $request->house_id;
         $message = $request->message;
         $rating = $request->rating;
