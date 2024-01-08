@@ -250,7 +250,7 @@ class HouseController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'message' => 'Something went wrong. Try again please.'
+                'message' => 'Something went wrong. Try again please. - '.$e->getMessage()
             ], 200);
         }
     }
@@ -258,7 +258,7 @@ class HouseController extends Controller
     public function deleteFavorite($id)
     {
         try {
-            $favorite = Favorite::find($id);
+            $favorite = Favorite::where('house_id',$id);
 
             if ($favorite) {
                 $favorite->delete();
