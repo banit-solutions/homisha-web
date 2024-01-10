@@ -137,22 +137,41 @@ class UserController extends Controller
 
     public function updateUser(Request $request)
     {
-        $user = $this->getUserByRequest($request);
+        try {
+            $user = $this->getUserByRequest($request);
+            if (!$user) {
+                return response()->json(
+                    [
+                        'error' => true,
+                        'message' => 'Not authorized to perform this action.',
+                    ],
+                    401
+                );
+            }
 
-        $validatedData = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $user->id,
-            'phone' => 'sometimes|string',
-            'residential_county' => 'sometimes|string',
-            'actively_searching' => 'sometimes|boolean'
-        ]);
+            $validatedData = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'email' => 'sometimes|email|unique:users,email,' . $user->id,
+                'phone' => 'sometimes|string',
+                'residential_county' => 'sometimes|string',
+                'actively_searching' => 'sometimes|integer'
+            ]);
 
-        $user->update($validatedData);
+            $user->update($validatedData);
 
-        return response()->json([
-            'error' => false,
-            'message' => 'User updated successfully.',
-        ]);
+            return response()->json([
+                'error' => false,
+                'message' => 'User updated successfully.',
+                'user' => $user
+            ]);
+        } catch (Exception $e) {
+            return response()->json(
+                [
+                    'error' => true,
+                    'message' => $e->getMessage(),
+                ]
+            );
+        }
     }
 
     public function updateUserProfileImage(Request $request)
@@ -162,8 +181,8 @@ class UserController extends Controller
         if (!$user) {
             return response()->json([
                 'error' => true,
-                'message' => 'User not found.',
-            ], 404);
+                'message' => 'Not authorized to perform this action.',
+            ], 401);
         }
 
         // Validate the incoming request
@@ -211,49 +230,108 @@ class UserController extends Controller
 
     public function updateUserLocation(Request $request)
     {
-        $user = $this->getUserByRequest($request);
+        try {
+            $user = $this->getUserByRequest($request);
 
-        $validatedData = $request->validate([
-            'longitude' => 'required|numeric',
-            'latitude' => 'required|numeric'
-        ]);
+            if (!$user) {
+                return response()->json(
+                    [
+                        'error' => true,
+                        'message' => 'Not authorized to perform this action.',
+                    ],
+                    401
+                );
+            }
 
-        $user->update($validatedData);
+            $validatedData = $request->validate(
+                [
+                    'longitude' => 'required|numeric',
+                    'latitude' => 'required|numeric'
+                ]
+            );
 
-        return response()->json([
-            'error' => false,
-            'message' => 'Location updated successfully.',
-        ]);
+            $locationName = $this->getLocationName($validatedData['latitude'], $validatedData['longitude']);
+
+            $user->latitude = $validatedData['latitude'];
+            $user->longitude = $validatedData['longitude'];
+            $user->location_name = $locationName;
+
+            $user->save();
+
+            return response()->json(
+                [
+                    'error' => false,
+                    'message' => 'Location updated successfully.',
+                    'user' => $user
+                ]
+            );
+        } catch (Exception $e) {
+            return response()->json(
+                [
+                    'error' => true,
+                    'message' => $e->getMessage(),
+                ]
+            );
+        }
     }
 
     public function updateUserPreferences(Request $request)
     {
-        $user = $this->getUserByRequest($request);
+        try {
 
-        $validatedData = $request->validate([
-            'id' => 'required|exists:user_preferences,id',
-            'user_id' => 'required|exists:users,id',
-            'county' => 'required|string',
-            'min_rent' => 'required|numeric',
-            'max_rent' => 'required|numeric',
-            'house_category' => 'required|string'
-        ]);
+            $user = $this->getUserByRequest($request);
+            if (!$user) {
+                return response()->json(
+                    [
+                        'error' => true,
+                        'message' => 'Not authorized to perform this action.',
+                    ],
+                    401
+                );
+            }
 
-        $preferences = UserPreference::findOrFail($validatedData['id']);
 
-        if ($preferences->user_id != $user->id) {
-            return response()->json([
-                'error' => true,
-                'message' => 'You do not have permission to update these preferences.',
-            ], 403); // Forbidden
+            $validatedData = $request->validate(
+                [
+                    'id' => 'required|exists:user_preferences,id',
+                    'county' => 'required|string',
+                    'min_rent' => 'required|numeric',
+                    'max_rent' => 'required|numeric',
+                    'house_category' => 'required|string'
+                ]
+            );
+
+            $preferences = UserPreference::findOrFail($validatedData['id']);
+
+            if ($preferences->user_id != $user->id) {
+                return response()->json(
+                    [
+                        'error' => true,
+                        'message' => 'Not authorized to perform this action.',
+                    ],
+                    401
+                );
+            }
+
+            $preferences->update($validatedData);
+
+            $user = User::find($user->id);
+
+            return response()->json(
+                [
+                    'error' => false,
+                    'message' => 'User preferences updated successfully.',
+                    'user' => $user,
+                ]
+            );
+        } catch (Exception $e) {
+            return response()->json(
+                [
+                    'error' => true,
+                    'message' => $e->getMessage(),
+                ]
+            );
         }
-
-        $preferences->update($validatedData);
-
-        return response()->json([
-            'error' => false,
-            'message' => 'User preferences updated successfully.',
-        ]);
     }
 
 

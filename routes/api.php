@@ -32,8 +32,9 @@ Route::middleware('api.auth')->group(
                     function () {
                         Route::put('/profile', [UserController::class, 'updateUser']);
                         Route::put('/location', [UserController::class, 'updateUserLocation']);
-                        Route::post('/profile-image', [UserController::class, 'updateUserProfileImage']);
                         Route::put('/preference', [UserController::class, 'updateUserPreferences']);
+
+                        Route::post('/profile-image', [UserController::class, 'updateUserProfileImage']);
                     }
                 );
             }
