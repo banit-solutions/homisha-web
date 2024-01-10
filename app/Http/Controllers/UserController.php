@@ -28,11 +28,20 @@ class UserController extends Controller
             $user = User::where('email', $email)->first();
 
             if ($user == null) {
+
                 $response = [
                     'error' => true,
                     'message' => "There's no account registered to this email."
                 ];
             } else {
+                if ($user->status == 2) {
+                    return response()->json(['error' => true, 'message' => 'This account was deleted. To recover your account contact our support team at info@banit.co.ke'], 200);
+                }
+
+                if ($user->status == 1) {
+                    return response()->json(['error' => true, 'message' => 'This account was suspended due to breaching of our policies. To recover your account contact our support team at info@banit.co.ke'], 200);
+                }
+
                 $otp = $this->generateOTP();
                 $encryptedOTP = Hash::make($otp);
                 $user->otp = $encryptedOTP;
@@ -198,7 +207,6 @@ class UserController extends Controller
             ], 200);
         }
     }
-
 
 
     public function updateUserLocation(Request $request)
@@ -374,5 +382,26 @@ class UserController extends Controller
         }
     }
 
+    public function deleteUser($userId)
+    {
+        // Get user from remember_token
+        $user = User::find($userId);
 
+        // Ensure the user exists and has favorites
+        if (!$user) {
+            return response()->json(['error' => true, 'message' => 'Unauthorized access'], 401);
+        }
+
+        $user->status = 2;
+        $user->save();
+
+        // Prepare error response
+        $response = [
+            'error' => false,
+            'message' => "Your account is deleted. You can only recover your account and data within 3 months from now."
+        ];
+
+        // Return as a JSON response
+        return response()->json($response, 200);
+    }
 }

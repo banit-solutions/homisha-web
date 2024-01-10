@@ -25,6 +25,7 @@ Route::middleware('api.auth')->group(
             function () {
                 Route::get('/notification', [UserController::class, 'getUserNotifications']);
                 Route::post('/feedback', [UserController::class, 'sendFeedback']);
+                Route::delete('/delete/{id}', [UserController::class, 'deleteUser']);
 
                 Route::group(
                     ['prefix' => '/update'],
