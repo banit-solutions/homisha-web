@@ -20,7 +20,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
+            return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 200);
         }
 
         // Fetch user preferences
@@ -234,7 +234,7 @@ class HouseController extends Controller
 
             // Ensure the user exists and has favorites
             if (!$user) {
-                return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
+                return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
             }
 
             $favorite = Favorite::firstOrCreate([
@@ -250,7 +250,7 @@ class HouseController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'message' => 'Something went wrong. Try again please. - '.$e->getMessage()
+                'message' => 'Something went wrong. Try again please. - ' . $e->getMessage()
             ], 200);
         }
     }
@@ -258,7 +258,7 @@ class HouseController extends Controller
     public function deleteFavorite($id)
     {
         try {
-            $favorite = Favorite::where('house_id',$id);
+            $favorite = Favorite::where('house_id', $id);
 
             if ($favorite) {
                 $favorite->delete();
@@ -288,7 +288,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
+            return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
         }
 
         $houseId = $request->house_id;
@@ -297,7 +297,7 @@ class HouseController extends Controller
 
         $review = Review::updateOrCreate(
             ['user_id' => $user->id, 'house_id' => $houseId],
-            ['message' => $message, 'rating' => $rating]
+            ['message' => $message, 'ratings' => $rating]
         );
 
         return response()->json([
@@ -314,7 +314,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user || !$user->favorites()->exists()) {
-            return response()->json(['error' => true, 'message' => 'No favorites found'], 200);
+            return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
         }
 
         // Get the IDs of the user's favorite houses
