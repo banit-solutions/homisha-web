@@ -9,7 +9,7 @@ class Review extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['house_id', 'user_id', 'message', 'ratings']; // Ensure these are your actual columns
+    protected $guarded = [];
 
     protected $with = ['user'];
 
