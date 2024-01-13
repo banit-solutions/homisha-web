@@ -82,7 +82,7 @@ class ManagerController extends Controller
                 foreach ($building->houses as $house) {
                     $housesData->push($this->formatHouseData($house, $building, $estate, $user));
 
-                    $houseRatings = $house->reviews->avg('rating'); // Assuming 'rating' column exists in reviews
+                    $houseRatings = $house->reviews->avg('ratings');
                     $totalRatings += $houseRatings;
                     $totalReviewsCount += $house->reviews->count();
                     $activeHousesCount += ($house->vacancies > 0) ? 1 : 0;
