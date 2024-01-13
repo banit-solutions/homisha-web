@@ -281,6 +281,40 @@ class HouseController extends Controller
             ], 200);
         }
     }
+    public function clearFavorites(Request $request)
+    {
+        try {
+            $user = $this->getUserByRequest($request);
+
+            // Ensure the user exists
+            if (!$user) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'User not found or not authorized.'
+                ], 403); // 403 Forbidden is more appropriate for unauthorized access
+            }
+
+            // Check if user has favorites and delete them
+            $deleted = Favorite::where('user_id', $user->id)->delete();
+
+            if ($deleted === 0) {
+                return response()->json([
+                    'error' => false,
+                    'message' => 'No favorites found for the user.'
+                ], 404); // 404 Not Found for no favorites
+            }
+
+            return response()->json([
+                'error' => false,
+                'message' => 'All favorites cleared successfully.'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Something went wrong. Try again please.'
+            ], 500); // 500 Internal Server Error for exceptions
+        }
+    }
 
     public function recordReview(Request $request)
     {

@@ -66,6 +66,7 @@ Route::middleware('api.auth')->group(
                 Route::post('/find-by/keyword', [HouseController::class, 'searchByKeyword']);
 
                 Route::delete('/delete/favorite/{id}', [HouseController::class, 'deleteFavorite']);
+                Route::delete('/clear/favorite', [HouseController::class, 'clearFavorites']);
             }
         );
 
