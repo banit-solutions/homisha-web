@@ -27,8 +27,7 @@ class UserController extends Controller
 
             $user = User::where('email', $email)->first();
 
-            if ($user == null) {
-
+            if (!$user) {
                 $response = [
                     'error' => true,
                     'message' => "There's no account registered to this email."
@@ -66,11 +65,11 @@ class UserController extends Controller
             // Prepare error response
             $response = [
                 'error' => true,
-                'message' => $e->getMessage()
+                'message' => 'Something went wrong. Please try again.'
             ];
 
             // Return as a JSON response
-            return response()->json($response, 200);
+            return response()->json($response, 500);
         }
     }
 

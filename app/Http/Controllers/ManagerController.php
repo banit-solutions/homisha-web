@@ -14,11 +14,19 @@ class ManagerController extends Controller
     {
         $user = $this->getUserByRequest($request);
 
-        $managers = Manager::with(['estates.buildings' => function ($query) {
-            $query->where('status', 1);
-        }, 'estates.buildings.houses' => function ($query) {
-            $query->with(['facilities', 'houseViews', 'gallery', 'reviews']);
-        }])
+        // Ensure the user exists and has favorites
+        if (!$user) {
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+        }
+
+        $managers = Manager::with([
+            'estates.buildings' => function ($query) {
+                $query->where('status', 1);
+            },
+            'estates.buildings.houses' => function ($query) {
+                $query->with(['facilities', 'houseViews', 'gallery', 'reviews']);
+            }
+        ])
             ->get()
             ->map(function ($manager) use ($user) {
                 return $this->formatManagerData($manager, $user);
@@ -43,13 +51,20 @@ class ManagerController extends Controller
         $perPage = $request->get('perPage', 10);
 
         $user = $this->getUserByRequest($request);
+        // Ensure the user exists and has favorites
+        if (!$user) {
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+        }
 
         // Include only buildings with status == 1 in the nested relation
-        $paginatedManagers = Manager::with(['estates.buildings' => function ($query) {
-            $query->where('status', 1);
-        }, 'estates.buildings.houses' => function ($query) {
-            $query->with(['facilities', 'houseViews', 'gallery', 'reviews']);
-        }])
+        $paginatedManagers = Manager::with([
+            'estates.buildings' => function ($query) {
+                $query->where('status', 1);
+            },
+            'estates.buildings.houses' => function ($query) {
+                $query->with(['facilities', 'houseViews', 'gallery', 'reviews']);
+            }
+        ])
             ->paginate($perPage, ['*'], 'page', $page);
 
         $managers = collect($paginatedManagers->items())->map(function ($manager) use ($user) {
@@ -134,12 +149,12 @@ class ManagerController extends Controller
             return response()->json([
                 'error' => false,
                 'message' => 'Enquiry submitted successfully.',
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'message' => $e->getMessage()
-            ]);
+                'message' => "Something went wrong. Please try again."
+            ], 500);
         }
     }
 
@@ -160,12 +175,12 @@ class ManagerController extends Controller
             return response()->json([
                 'error' => false,
                 'message' => 'Complaint submitted successfully.',
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'message' => $e->getMessage()
-            ]);
+                'message' => "Something went wrong. Please try again."
+            ], 500);
         }
     }
 
