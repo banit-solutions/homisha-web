@@ -19,7 +19,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
         }
 
         // Fetch user preferences
@@ -59,6 +59,11 @@ class HouseController extends Controller
 
         // Get user from remember_token (or use auth middleware to ensure user is authenticated)
         $user = $this->getUserByRequest($request);
+
+        // Ensure the user exists and has favorites
+        if (!$user) {
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+        }
 
         // Query houses randomly and paginate the results
         $houses = House::where('vacancies', '>', 0)
@@ -112,6 +117,10 @@ class HouseController extends Controller
 
             // Get user from remember_token
             $user = $this->getUserByRequest($request);
+            // Ensure the user exists and has favorites
+            if (!$user) {
+                return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+            }
 
             // Fetch all buildings first (consider limiting this query to a reasonable bounding box if possible)
             $buildings = Building::where('status', 1)->get();
@@ -151,12 +160,12 @@ class HouseController extends Controller
                 'error' => false,
                 'message' => 'Houses found near the specified location.',
                 'data' => $formattedHouses
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
                 'message' => $e->getMessage()
-            ]);
+            ], 500);
         }
     }
 
@@ -170,6 +179,10 @@ class HouseController extends Controller
             ])['keyword'];
 
             $user = $this->getUserByRequest($request);
+            // Ensure the user exists and has favorites
+            if (!$user) {
+                return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+            }
 
             // Search in houses, estates, and buildings
             $houses = House::whereHas('building', function ($query) use ($keyword) {
@@ -201,27 +214,34 @@ class HouseController extends Controller
                 'error' => false,
                 'message' => 'Houses found matching the keyword.',
                 'houses' => $formattedHouses
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'message' => $e->getMessage()
-            ]);
+                'message' => "Something went wrong. Try again later."
+            ], 500);
         }
     }
 
     public function updateHouseViews(Request $request)
     {
-        $houseId = $request->house_id;
+        try {
+            $houseId = $request->house_id;
 
-        $houseView = HouseView::firstOrNew(['house_id' => $houseId]);
-        $houseView->counts = $houseView->exists ? $houseView->counts + 1 : 1;
-        $houseView->save();
+            $houseView = HouseView::firstOrNew(['house_id' => $houseId]);
+            $houseView->counts = $houseView->exists ? $houseView->counts + 1 : 1;
+            $houseView->save();
 
-        return response()->json([
-            'error' => false,
-            'message' => 'House views updated successfully.',
-        ], 200);
+            return response()->json([
+                'error' => false,
+                'message' => 'House views updated successfully.',
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => "Something went wrong. Try again later."
+            ], 500);
+        }
     }
 
     public function addFavoriteHouse(Request $request)
@@ -233,7 +253,7 @@ class HouseController extends Controller
 
             // Ensure the user exists and has favorites
             if (!$user) {
-                return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
+                return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
             }
 
             $favorite = Favorite::firstOrCreate([
@@ -249,8 +269,8 @@ class HouseController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'message' => 'Something went wrong. Try again please. - ' . $e->getMessage()
-            ], 200);
+                'message' => 'Something went wrong. Try again later.'
+            ], 500);
         }
     }
 
@@ -272,12 +292,12 @@ class HouseController extends Controller
             return response()->json([
                 'error' => true,
                 'message' => 'Favorite not found.',
-            ], 200);
+            ], 404);
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
                 'message' => 'Something went wrong. Try again please.'
-            ], 200);
+            ], 500);
         }
     }
     public function clearFavorites(Request $request)
@@ -289,8 +309,8 @@ class HouseController extends Controller
             if (!$user) {
                 return response()->json([
                     'error' => true,
-                    'message' => 'User not found or not authorized.'
-                ], 403); // 403 Forbidden is more appropriate for unauthorized access
+                    'message' => 'You need to be logged in to view houses. Please log in and try again.'
+                ], 401); // 403 Forbidden is more appropriate for unauthorized access
             }
 
             // Check if user has favorites and delete them
@@ -321,7 +341,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
         }
 
         $houseId = $request->house_id;
@@ -337,7 +357,7 @@ class HouseController extends Controller
             'error' => false,
             'message' => 'Review recorded successfully.',
             'data' => $review,
-        ]);
+        ], 200);
     }
 
     public function getFavoriteHouses(Request $request)
@@ -347,7 +367,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
         }
 
         // Get the IDs of the user's favorite houses
@@ -371,7 +391,14 @@ class HouseController extends Controller
             return $this->formatHouseData($house, $building, $estate, $user);
         });
 
-        return response()->json(['error' => false, 'message' => 'Favorite houses found', 'houses' => $houses], 200);
+        return response()->json(
+            [
+                'error' => false,
+                'message' => 'Favorite houses found',
+                'houses' => $houses
+            ],
+            200
+        );
     }
 
 }
