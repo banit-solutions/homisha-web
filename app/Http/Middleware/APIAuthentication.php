@@ -24,7 +24,7 @@ class APIAuthentication
             $isValid = $this->authenticateKey($authKey);
 
             if (!$isValid) {
-                return response()->json(['error' => true, 'message' => 'Unauthorized access'], 401); // Unauthorized
+                return response()->json(['error' => true, 'message' => 'Unauthorized access.'], 401); // Unauthorized
             }
         }
 

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Building;
 use App\Models\Favorite;
 use App\Models\Review;
-use App\Models\User;
 use App\Models\House;
 use App\Models\HouseView;
 use Exception;
@@ -20,7 +19,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 200);
+            return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
         }
 
         // Fetch user preferences
@@ -347,7 +346,7 @@ class HouseController extends Controller
         $user = $this->getUserByRequest($request);
 
         // Ensure the user exists and has favorites
-        if (!$user || !$user->favorites()->exists()) {
+        if (!$user) {
             return response()->json(['error' => true, 'message' => 'Not authorized to perform this action.'], 401);
         }
 
