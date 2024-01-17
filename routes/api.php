@@ -3,7 +3,6 @@
 use App\Http\Controllers\HouseController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*

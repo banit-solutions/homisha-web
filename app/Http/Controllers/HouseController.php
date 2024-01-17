@@ -19,7 +19,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to perform this operation. Please log in and try again.'], 401);
         }
 
         // Fetch user preferences
@@ -62,7 +62,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to perform this operation. Please log in and try again.'], 401);
         }
 
         // Query houses randomly and paginate the results
@@ -119,7 +119,7 @@ class HouseController extends Controller
             $user = $this->getUserByRequest($request);
             // Ensure the user exists and has favorites
             if (!$user) {
-                return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+                return response()->json(['error' => true, 'message' => 'You need to be logged in to perform this operation. Please log in and try again.'], 401);
             }
 
             // Fetch all buildings first (consider limiting this query to a reasonable bounding box if possible)
@@ -181,7 +181,7 @@ class HouseController extends Controller
             $user = $this->getUserByRequest($request);
             // Ensure the user exists and has favorites
             if (!$user) {
-                return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+                return response()->json(['error' => true, 'message' => 'You need to be logged in to perform this operation. Please log in and try again.'], 401);
             }
 
             // Search in houses, estates, and buildings
@@ -253,7 +253,7 @@ class HouseController extends Controller
 
             // Ensure the user exists and has favorites
             if (!$user) {
-                return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+                return response()->json(['error' => true, 'message' => 'You need to be logged in to perform this operation. Please log in and try again.'], 401);
             }
 
             $favorite = Favorite::firstOrCreate([
@@ -309,7 +309,7 @@ class HouseController extends Controller
             if (!$user) {
                 return response()->json([
                     'error' => true,
-                    'message' => 'You need to be logged in to view houses. Please log in and try again.'
+                    'message' => 'You need to be logged in to perform this operation. Please log in and try again.'
                 ], 401); // 403 Forbidden is more appropriate for unauthorized access
             }
 
@@ -341,7 +341,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to perform this operation. Please log in and try again.'], 401);
         }
 
         $houseId = $request->house_id;
@@ -367,7 +367,7 @@ class HouseController extends Controller
 
         // Ensure the user exists and has favorites
         if (!$user) {
-            return response()->json(['error' => true, 'message' => 'You need to be logged in to view houses. Please log in and try again.'], 401);
+            return response()->json(['error' => true, 'message' => 'You need to be logged in to perform this operation. Please log in and try again.'], 401);
         }
 
         // Get the IDs of the user's favorite houses
