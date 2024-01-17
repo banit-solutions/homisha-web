@@ -9,7 +9,7 @@ class Feedback extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'feedback', 'category'];
+    protected $guarded = [];
 
     // Inside the Feedback model
     public function customer()
