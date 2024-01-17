@@ -161,26 +161,41 @@ class ManagerController extends Controller
     public function storeComplaint(Request $request)
     {
         try {
-            // Validate the request data
-            $validated = $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'manager_id' => 'required|exists:managers,id',
-                'message' => 'required|string',
-            ]);
+            // Get user from remember_token (or use auth middleware to ensure user is authenticated)
+            $user = $this->getUserByRequest($request);
 
+            // Ensure the user exists and has favorites
+            if (!$user) {
+                return response()->json(['error' => true, 'message' => 'You need to be logged in to perform this operation. Please log in and try again.'], 401);
+            }
+            // Validate the request data
+            $validated = $request->validate(
+                [
+                    'manager_id' => 'required|exists:managers,id',
+                    'message' => 'required|string',
+                ]
+            );
+
+            $validated['user_id'] = $user->id;
             // Create the complaint
             $complaint = new Complaint($validated);
             $complaint->save();
 
-            return response()->json([
-                'error' => false,
-                'message' => 'Complaint submitted successfully.',
-            ], 200);
+            return response()->json(
+                [
+                    'error' => false,
+                    'message' => 'Complaint submitted successfully.',
+                ],
+                200
+            );
         } catch (Exception $e) {
-            return response()->json([
-                'error' => true,
-                'message' => "Something went wrong. Please try again."
-            ], 500);
+            return response()->json(
+                [
+                    'error' => true,
+                    'message' => "Something went wrong. Please try again."
+                ],
+                500
+            );
         }
     }
 
