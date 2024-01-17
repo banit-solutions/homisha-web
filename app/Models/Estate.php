@@ -9,6 +9,8 @@ class Estate extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     public function manager()
     {
         return $this->belongsTo(Manager::class)->select(['id', 'name', 'email', 'phone', 'county', 'profile_image']);

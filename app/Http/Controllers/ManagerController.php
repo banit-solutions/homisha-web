@@ -192,7 +192,7 @@ class ManagerController extends Controller
             return response()->json(
                 [
                     'error' => true,
-                    'message' => "Something went wrong. Please try again."
+                    'message' => "Something went wrong. Please try again. - ".$e->getMessage()
                 ],
                 500
             );

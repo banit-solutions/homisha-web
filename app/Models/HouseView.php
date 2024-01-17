@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class HouseView extends Model
 {
     use HasFactory;
+
+    protected $guarded = [];
+    
     public function house()
     {
         return $this->belongsTo(House::class);
